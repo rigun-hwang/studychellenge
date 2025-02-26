@@ -1,0 +1,311 @@
+  const [userDatas, setUserDatas] = useState<any>(null);
+  
+  const [userId, setUserId] = useState<string>("");
+  const [imageA, setImageA] = useState<File | null>(null);
+  const [imageB, setImageB] = useState<File | null>(null)
+  const [result, setResult] = useState<string>("");
+  const router = useRouter();
+
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [imageBase642, setImageBase642]  = useState<string | null>(null); 
+  const [completed, setCompleted] = useState(false)
+  const identifyImage = async (additionPrompt: string = "", imageB, index) => {
+    try {
+      if (imageB) {
+        const imageParts = await fileToGenerativePart(imageB);
+        const result = await model.generateContent([
+          "이게 오늘 내가 공부할 페이지의 이미지야. 이것의 단원명과 무엇인지를 알려줘, 하지만 공부랑 관련이 안되어 있으면, '공부와 관련된 이미지를 준비해 주세요' 라고만 말해줘",
+          imageParts,
+        ]);
+        const response = await result.response;
+        const text = await response.text();
+        setResult(text.trim());
+        console.log(text.trim())
+        updatedData(index, text.trim())
+      }
+    } catch (error) {
+      console.log((error as Error)?.message);
+    }
+  };
+  const identifyImageA = async (additionPrompt: string = "", imageB,imageC, index) => {
+    try {
+      if (imageB) {
+        
+        const imageParts = await fileToGenerativePart(imageB);
+        const imageParts2 = await fileToGenerativePart(imageC);
+        console.log(imageC)
+        const result = await model.generateContent([
+          imageParts,
+          imageParts2,
+          '두 이미지에서 책의 페이지 변화 또는 필기 추가가 확인되면 "true", 없거나 공부와 관련이 없으면 "false"만 출력하세요.',
+        ]);
+        console.log("index : " +index)
+        const response = await result.response;
+        const text = await response.text();
+        if (text.trim() == 'true'){
+          updateCompleted(index, true)
+        }
+        console.log(text.trim())
+
+      }
+    } catch (error) {
+      console.log((error as Error)?.message);
+    }
+  };
+  const fileToGenerativePart = async (file: File): Promise<{
+    inlineData: { data: string; mimeType: string };
+  }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result as string;
+        const base64Content = base64Data.split(",")[1];
+        resolve({
+          inlineData: {
+            data: base64Content,
+            mimeType: file.type,
+          },
+        });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const updateTaskImage = async (newImage: string, taskIndex: number) => {
+    try {
+      // Firestore에서 해당 userId의 문서 가져오기
+      const userDocRef = doc(fireStore, "userData", userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      if (!userDocSnap.exists()) {
+        console.error("❌ 문서를 찾을 수 없음!");
+        return;
+      }
+      
+      const userData = userDocSnap.data();
+  
+      // 기존 todayTasks 배열을 업데이트
+      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
+        if (index === taskIndex) {
+          return {
+            ...task,
+            images: [newImage], // 기존 이미지에 새로운 이미지 추가
+            title: result,
+          };
+        }
+        return task;
+      });
+  
+      // Firestore 업데이트
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+  
+      console.log("✅ 업데이트 성공!", updatedTasks);
+      identifyImage()
+      // 최신 데이터 다시 불러오기
+      LoadData();
+      
+    } catch (error) {
+      console.error("❌ 업데이트 실패:", error);
+    }
+  };
+  const updatedData = async (taskIndex: number,res) => {
+    try {
+      // Firestore에서 해당 userId의 문서 가져오기
+      const userDocRef = doc(fireStore, "userData", userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      if (!userDocSnap.exists()) {
+        console.error("❌ 문서를 찾을 수 없음!");
+        return;
+      }
+      
+      const userData = userDocSnap.data();
+  
+      // 기존 todayTasks 배열을 업데이트
+      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
+        if (index === taskIndex) {
+          return {
+            ...task, // 기존 이미지에 새로운 이미지 추가
+            title: res,
+          };
+        }
+        return task;
+      });
+  
+      // Firestore 업데이트
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+  
+      console.log("✅ 업데이트 성공!", updatedTasks);
+
+      // 최신 데이터 다시 불러오기
+      LoadData();
+      
+    } catch (error) {
+      console.error("❌ 업데이트 실패:", error);
+    }
+  };
+  const updateCompleted = async (taskIndex: number,res) => {
+    try {
+      // Firestore에서 해당 userId의 문서 가져오기
+      const userDocRef = doc(fireStore, "userData", userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      if (!userDocSnap.exists()) {
+        console.error("❌ 문서를 찾을 수 없음!");
+        return;
+      }
+      
+      const userData = userDocSnap.data();
+      console.log(taskIndex)
+      // 기존 todayTasks 배열을 업데이트
+      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
+        if (index === taskIndex) {
+          return {
+            ...task, // 기존 이미지에 새로운 이미지 추가
+            completed: true,
+          };
+        }
+        return task;
+      });
+  
+      // Firestore 업데이트
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+  
+      console.log("✅ 업데이트 성공!", updatedTasks);
+
+      // 최신 데이터 다시 불러오기
+      LoadData();
+      
+    } catch (error) {
+      console.error("❌ 업데이트 실패:", error);
+    }
+  };
+  const updateTaskImageA = async (newImage: string, taskIndex: number, file1, file2) => {
+    try {
+      // Firestore에서 해당 userId의 문서 가져오기
+      const userDocRef = doc(fireStore, "userData", userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      if (!userDocSnap.exists()) {
+        console.error("❌ 문서를 찾을 수 없음!");
+        return;
+      }
+      
+      const userData = userDocSnap.data();
+
+      // 기존 todayTasks 배열을 업데이트
+      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
+        if (index === taskIndex) {
+          return {
+            ...task,
+            imagesAfter: [newImage], // 기존 이미지에 새로운 이미지 추가
+          };
+        }
+        return task;
+      });
+  
+      // Firestore 업데이트
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+      identifyImageA("",file1, file2mageB, taskIndex)
+      console.log("✅ 업데이트 성공!", updatedTasks);
+
+      // 최신 데이터 다시 불러오기
+      LoadData();
+      
+    } catch (error) {
+      console.error("❌ 업데이트 실패:", error);
+    }
+  };
+  const handleImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]; // 첫 번째 파일 가져오기
+
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+    
+    console.log("Selected file:", file); // 파일 로그 확인
+
+    if (!(file instanceof Blob)) {
+      console.error("File is not a valid Blob type");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    identifyImage(" ",file, index)
+    setImageA(file)
+    reader.onloadend = () => {
+      setImageBase64(reader.result as string);
+      updateTaskImage(reader.result as string, index);
+      console.log("Base64 Data:", reader.result);
+    };
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
+    };
+  };
+  const handleImageUploadA = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]; // 첫 번째 파일 가져오기
+
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+    
+    console.log("Selected file:", file); // 파일 로그 확인
+
+    if (!(file instanceof Blob)) {
+      console.error("File is not a valid Blob type");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    setImageB(file)
+    console.log("imageA : " + imageA)
+    reader.onloadend = () => {
+      setImageBase642(reader.result as string);
+      updateTaskImageA(reader.result as string, index as number, imageA, file);
+      console.log("Base64 Data:", reader.result);
+    };
+
+    reader.onerror = (error) => {
+      console.error("Error reading file:", error);
+    };
+  };
+  const LoadData = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(fireStore, "userData"));
+      if (!querySnapshot.empty) {
+        // auth.currentUser
+        if (!auth.currentUser) {
+          router.push("/signup");
+          setIsLoading(true);
+          return;
+        }
+ 
+        querySnapshot.docs.map((d) => {
+          if (d.data().email === auth.currentUser.email) {
+            setUserDatas(d.data());
+            setUserId(d.id);
+            console.log("Firestore Document Data:", d.data());
+          }
+        });
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("데이터 로딩 중 오류:", error);
+    }
+  };
+  const sendAI = (image1, image2) => {
+    
+  }
+  useEffect(() => {
+    LoadData();
+  }, []);
+
+  if (isLoading) {
+    return <div>데이터를 불러오는 중...</div>;
+  }

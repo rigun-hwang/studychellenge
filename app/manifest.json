@@ -1,0 +1,18 @@
+{
+  "name": "스터디챌린지",
+  "short_name": "스터디챌린지지",
+  "description": "계획적으로 공부하고 만점 받자!",
+  "theme_color": "#ffc211",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/public/ucib.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
