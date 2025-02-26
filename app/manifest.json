@@ -1,17 +1,1 @@
-{
-  "name": "스터디챌린지",
-  "short_name": "스터디챌린지지",
-  "description": "계획적으로 공부하고 만점 받자!",
-  "theme_color": "#ffc211",
-  "background_color": "#ffffff",
-  "display": "standalone",
-  "scope": "/",
-  "start_url": "/",
-  "icons": [
-    {
-      "src": "/public/ucib.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    }
-  ]
-}
+{"theme_color":"#8936FF","background_color":"#2EC6FE","icons":[{"purpose":"maskable","sizes":"512x512","src":"icon512_maskable.png","type":"image/png"},{"purpose":"any","sizes":"512x512","src":"icon512_rounded.png","type":"image/png"}],"orientation":"any","display":"standalone","dir":"auto","lang":"ko-KR","name":"스터디 챌린지","short_name":"스터디 챌린지","start_url":"/","scope":"/","description":"계획하고, 공부하고, 만점받자!"}
