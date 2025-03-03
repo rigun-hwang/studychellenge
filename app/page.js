@@ -57,7 +57,24 @@ export default function StudyDashboard() {
   const [imageBase642, setImageBase642]  = useState(null); 
   const [completed, setCompleted] = useState(false)
   const refAnimationInstance = useRef(null);
+  const [progress, setProgress] = useState({});
+  function getWeekNumber(date) {
+    const d = new Date(date.getTime());
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  }
 
+  useEffect(() => {
+    LoadData()
+  }, []);
+
+  // 데이터 업데이트 함수
+  const updateProgress = (newProgress) => {
+    setProgress(newProgress);
+    localStorage.setItem("weeklyProgress", JSON.stringify(newProgress));
+  };
   useEffect(() => {
     // confetti 인스턴스 생성
     refAnimationInstance.current = confetti.create(null, { resize: true, useWorker: true });
@@ -100,7 +117,7 @@ export default function StudyDashboard() {
         const result = await model.generateContent([
           imageParts,
           imageParts2,
-          '두 이미지에서 책의 페이지 변화 또는 필기 추가가 확인되면 "true", 없거나 공부와 관련이 없으면 "false"만 출력하세요.',
+          '첫 이미지는 공부하기전이고, 두번째 이미지는 공부한 후 이미지야. 공부가 100%완료 되었다고 판단이 되면 "true", 없거나 공부와 관련이 없으면 "false"만 출력하세요.',
         ]);
         console.log("index : " +index)
         const response = await result.response;
@@ -109,6 +126,8 @@ export default function StudyDashboard() {
           updateCompleted(index, true)
           fire()
           updateUsersPoint(index, Number(userDatas.todayTasks[index].points))
+        }else{
+          alert("챌린지 실패!, 다시 시도하거나 포기하고싶으면 아래의 버튼을 눌러주세요")
         }
         console.log(text.trim())
 
@@ -454,7 +473,7 @@ export default function StudyDashboard() {
       console.error("Error reading file:", error);
     };
   };
-  const LoadData = async () => {
+  async function LoadData(){
     try {
       const querySnapshot = await getDocs(collection(fireStore, "userData"));
       if (!querySnapshot.empty) {
@@ -464,25 +483,62 @@ export default function StudyDashboard() {
           setIsLoading(true);
           return;
         }
-        
+        let id = ""
+
+        setIsLoading(false);
         querySnapshot.docs.map((d) => {
           if (d.data().email === auth.currentUser.email) {
             setUserDatas(d.data());
             setUserId(d.id);
-
-            console.log("Firestore Document Data:", d.data());
+            id = d.id;
           }
         });
-        setIsLoading(false);
+                // 현재 연도 및 주차 계산
+        const now = new Date();
+        const currentWeek = getWeekNumber(now);
+        const lastWeek = parseInt(localStorage.getItem("lastUpdatedWeek"), 10) || 0;
+
+        if (currentWeek !== lastWeek) {
+                  // 새 주차가 시작되었으므로 초기화
+                  // Firestore에서 해당 userId의 문서 가져오기
+          const userDocRef = doc(fireStore, "userData", id);
+          const userDocSnap = await getDoc(userDocRef);
+              
+          if (!userDocSnap.exists()) {
+            console.error("❌ 문서를 찾을 수 없음!");
+            return;
+          }
+                  
+          const userData = userDocSnap.data();
+
+          const dayNames = ["월", "화", "수", "목","금","토","일"]
+          const updatedProgress = userData.weeklyProgress.map((task, index) => {
+            return {
+                ...task,
+                minutes : 0
+            }
+                    
+          });
+
+          await updateDoc(userDocRef, { weeklyProgress: updatedProgress });
+          localStorage.setItem("lastUpdatedWeek", currentWeek);
+          setProgress({});
+        } else {
+                // 기존 데이터 불러오기
+          const storedData = JSON.parse(localStorage.getItem("weeklyProgress")) || {};
+          setProgress(storedData);
+        }
+        
       }
+
+
+
+      console.log("✅ 업데이트 성공");
     } catch (error) {
       console.error("데이터 로딩 중 오류:", error);
     }
   };
 
-  useEffect(() => {
-    LoadData();
-  }, []);
 
   if (isLoading) {
     return <div>데이터를 불러오는 중...</div>;
