@@ -23,6 +23,8 @@ import {
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+import 이미지 from './clock.png'
 import confetti from "canvas-confetti"; // 여기서 canvas-confetti를 사용!
 
 const truncateText = (text , maxLength = 8) => {
@@ -217,6 +219,43 @@ export default function StudyDashboard() {
   function blobToFile(blob, fileName) {
     return new File([blob], fileName, { type: blob.type });
   }
+  const StartChallenge = async (taskIndex) => {
+    try {
+      // Firestore에서 해당 userId의 문서 가져오기
+      const userDocRef = doc(fireStore, "userData", userId);
+      const userDocSnap = await getDoc(userDocRef);
+  
+      if (!userDocSnap.exists()) {
+        console.error("❌ 문서를 찾을 수 없음!");
+        return;
+      }
+      
+      const userData = userDocSnap.data();
+  
+      // 기존 todayTasks 배열을 업데이트
+      const updatedTasks = userData.todayTasks.map((task, index) => {
+        if (index === taskIndex) {
+          return {
+            ...task, // 기존 이미지에 새로운 이미지 추가
+            challenging : true,
+            startTime : new Date().toLocaleTimeString(),   
+          };
+        }
+        return task;
+      });
+     
+      // Firestore 업데이트
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+      alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
+      console.log("✅ 업데이트 성공!", updatedTasks);
+
+      // 최신 데이터 다시 불러오기
+      LoadData();
+      
+    } catch (error) {
+      console.error("❌ 업데이트 실패:", error);
+    }
+  };
   const updatedData = async (taskIndex,res) => {
     try {
       // Firestore에서 해당 userId의 문서 가져오기
@@ -273,6 +312,7 @@ export default function StudyDashboard() {
           return {
             ...task, // 기존 이미지에 새로운 이미지 추가
             completed: true,
+            challenging : false,
             end:new Date().toLocaleTimeString(),
           };
         }
@@ -326,6 +366,7 @@ export default function StudyDashboard() {
           return {
             ...task, // 기존 이미지에 새로운 이미지 추가
             points: res,
+            
           };
         }
         return task;
@@ -631,12 +672,12 @@ export default function StudyDashboard() {
                             <DialogHeader> 
                               <DialogTitle>Study Challenge</DialogTitle> 
                               <DialogDescription>AI 기반 맞춤형 학습 관리 플랫폼</DialogDescription>
-                              
+
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
                               <div>
                                 <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
-                                  완료된 공부 페이지를 업로드 해주세요
+                                  오늘 공부할 페이지 이미지 업로드
                                 </label>
                                 <div className="flex items-center justify-center w-full">
                                   <label
@@ -655,53 +696,14 @@ export default function StudyDashboard() {
                                       id={`imageUpload-${task.id-1}`}
                                       accept="image/*"
                                       className="hidden"
-                                      onChange={(e) => handleImageUploadA(task.id-1, e)}
+                                      onChange={(e) => handleImageUpload(task.id-1, e)}
                                       multiple
                                     />
                                   </label>
                                 </div>
                               </div>
                             </div>
-                            {userDatas.todayTasks[task.id-1].images.length > 0 && (
-                              <div className="mt-6">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">공부하기전 공부 페이지</h2>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {userDatas.todayTasks[task.id-1].images.map((image, imgIndex) => (
-                                    <Image
-                                      key={imgIndex}
-                                      src={image || "/placeholder.svg"}
-                                      alt={`공부 페이지 ${imgIndex + 1}`}
-                                      width={200}
-                                      height={150}
-                                      className="rounded-lg w-full h-auto object-cover"
-                                    />
-                                  ))}
-                                  
-                                  
-                                </div>
-
-                              </div>
-                            )}
-                            {userDatas.todayTasks[task.id-1].imagesAfter.length > 0 && (
-                              <div className="mt-6">
-                                <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {userDatas.todayTasks[task.id-1].imagesAfter.map((image, imgIndex) => (
-                                    <Image
-                                      key={imgIndex}
-                                      src={image || "/placeholder.svg"}
-                                      alt={`공부 페이지 ${imgIndex + 1}`}
-                                      width={200}
-                                      height={150}
-                                      className="rounded-lg w-full h-auto object-cover"
-                                    />
-                                  ))}
-                                  
-                                  
-                                </div>
-
-                              </div>
-                            )}
+ 
                           </DialogContent>
                         </Dialog>
                       </div>
@@ -715,59 +717,16 @@ export default function StudyDashboard() {
                           <DialogHeader> 
                             <DialogTitle>Study Challenge</DialogTitle> 
                             <DialogDescription>AI 기반 맞춤형 학습 관리 플랫폼</DialogDescription>
-                            
+                            <div className='flex'>
+                              <Image src={이미지} width={250} height={250} alt = "시계 이미지" className="mx-auto"/>
+                              
+                            </div>
+                            <p>공부하기전 이미지와 공부한후 이미지를 촬영후 챌린지 옆 동그라미를 눌러 완료해주세요.</p>
+                            <br/>
+                            <Button onClick={()=>{StartChallenge(task.id-1)}} disabled={userDatas.todayTasks[task.id-1].challenging}>챌린지 시작!!</Button>
+                       
                           </DialogHeader>
-                          <div className="grid gap-4 py-4">
-                            <div>
-                              <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
-                                오늘 공부할 페이지 이미지 업로드
-                              </label>
-                              <div className="flex items-center justify-center w-full">
-                                <label
-                                  htmlFor={`imageUpload-${task.id-1}`}
-                                  className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                                >
-                                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                                    <p className="mb-2 text-sm text-gray-500">
-                                      <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
-                                    </p>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
-                                  </div>
-                                  <input
-                                    type="file"
-                                    id={`imageUpload-${task.id-1}`}
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => handleImageUpload(task.id-1, e)}
-                                    multiple
-                                  />
-                                </label>
-                              </div>
-                            </div>
-                          </div>
-                          {userDatas.todayTasks[task.id-1].images.length > 0 && (
-                            <div className="mt-6">
-                              <h2 className="text-lg font-semibold text-gray-800 mb-4">업로드된 이미지</h2>
-                              <div className="grid grid-cols-2 gap-2">
-                                {userDatas.todayTasks[task.id-1].images.map((image, imgIndex) => (
-                                  <Image
-                                    key={imgIndex}
-                                    src={image || "/placeholder.svg"}
-                                    alt={`공부 페이지 ${imgIndex + 1}`}
-                                    width={200}
-                                    height={150}
-                                    className="rounded-lg w-full h-auto object-cover"
-                                  />
-                                ))}
-                                
-                                
-                              </div>
-                              <br />
-                              <h2 className="text-lg font-semibold text-gray-800 mb-4">AI의 이미지 분석 결과</h2>
-                              <h1><br/>{task.title}</h1>
-                            </div>
-                          )}
+
                         </DialogContent>
                       </Dialog>
                       </span>
@@ -805,32 +764,7 @@ export default function StudyDashboard() {
             </CardContent>
           </Card>
 
-          {/* 친구 활동 */}
-          <Card className="bg-white/70 backdrop-blur border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Users className="text-blue-600" />
-                친구 활동
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userDatas.friends.map((friend, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white border border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center text-white">
-                        {friend.avatar}
-                      </div>
-                      <div>
-                        <p className="font-medium">{friend}</p>
-                        <p className="text-sm text-gray-600">{friend.status}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+
 
           {/* 학습 팁 */}
           <Card className="bg-white/70 backdrop-blur border-0 shadow-lg">
