@@ -1,311 +1,98 @@
-  const [userDatas, setUserDatas] = useState<any>(null);
-  
-  const [userId, setUserId] = useState<string>("");
-  const [imageA, setImageA] = useState<File | null>(null);
-  const [imageB, setImageB] = useState<File | null>(null)
-  const [result, setResult] = useState<string>("");
-  const router = useRouter();
+                    <div>
+                                <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
+                                  오늘 공부할 페이지 이미지 업로드
+                                </label>
+                                <div className="flex items-center justify-center w-full">
+                                  <label
+                                    htmlFor={`imageUpload-${task.id-1}`}
+                                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                  >
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                      <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                      <p className="mb-2 text-sm text-gray-500">
+                                        <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
+                                      </p>
+                                      <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
+                                    </div>
+                                    <input
+                                      type="file"
+                                      id={`imageUpload-${task.id-1}`}
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={(e) => handleImageUpload(task.id-1, e)}
+                                      multiple
+                                    />
+                                    
 
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [imageBase642, setImageBase642]  = useState<string | null>(null); 
-  const [completed, setCompleted] = useState(false)
-  const identifyImage = async (additionPrompt: string = "", imageB, index) => {
-    try {
-      if (imageB) {
-        const imageParts = await fileToGenerativePart(imageB);
-        const result = await model.generateContent([
-          "이게 오늘 내가 공부할 페이지의 이미지야. 이것의 단원명과 무엇인지를 알려줘, 하지만 공부랑 관련이 안되어 있으면, '공부와 관련된 이미지를 준비해 주세요' 라고만 말해줘",
-          imageParts,
-        ]);
-        const response = await result.response;
-        const text = await response.text();
-        setResult(text.trim());
-        console.log(text.trim())
-        updatedData(index, text.trim())
-      }
-    } catch (error) {
-      console.log((error as Error)?.message);
-    }
-  };
-  const identifyImageA = async (additionPrompt: string = "", imageB,imageC, index) => {
-    try {
-      if (imageB) {
-        
-        const imageParts = await fileToGenerativePart(imageB);
-        const imageParts2 = await fileToGenerativePart(imageC);
-        console.log(imageC)
-        const result = await model.generateContent([
-          imageParts,
-          imageParts2,
-          '두 이미지에서 책의 페이지 변화 또는 필기 추가가 확인되면 "true", 없거나 공부와 관련이 없으면 "false"만 출력하세요.',
-        ]);
-        console.log("index : " +index)
-        const response = await result.response;
-        const text = await response.text();
-        if (text.trim() == 'true'){
-          updateCompleted(index, true)
-        }
-        console.log(text.trim())
+                                    
+                                  </label>
+                                </div>
+                              </div>
+                                {userDatas.todayTasks[task.id-1].images.length > 0 && (
+                                    <div className="mt-6">
+                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부하기전 공부 페이지</h2>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {userDatas.todayTasks[task.id-1].images.map((image, imgIndex) => (
+                                          <Image
+                                            key={imgIndex}
+                                            src={image || "/placeholder.svg"}
+                                            alt={`공부 페이지 ${imgIndex + 1}`}
+                                            width={200}
+                                            height={150}
+                                            className="rounded-lg w-full h-auto object-cover"
+                                          />
+                                        ))}
+          
+          
+                                      </div>
+          
+                                    </div>
+                                  )}
 
-      }
-    } catch (error) {
-      console.log((error as Error)?.message);
-    }
-  };
-  const fileToGenerativePart = async (file: File): Promise<{
-    inlineData: { data: string; mimeType: string };
-  }> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Data = reader.result as string;
-        const base64Content = base64Data.split(",")[1];
-        resolve({
-          inlineData: {
-            data: base64Content,
-            mimeType: file.type,
-          },
-        });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const updateTaskImage = async (newImage: string, taskIndex: number) => {
-    try {
-      // Firestore에서 해당 userId의 문서 가져오기
-      const userDocRef = doc(fireStore, "userData", userId);
-      const userDocSnap = await getDoc(userDocRef);
-  
-      if (!userDocSnap.exists()) {
-        console.error("❌ 문서를 찾을 수 없음!");
-        return;
-      }
-      
-      const userData = userDocSnap.data();
-  
-      // 기존 todayTasks 배열을 업데이트
-      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
-        if (index === taskIndex) {
-          return {
-            ...task,
-            images: [newImage], // 기존 이미지에 새로운 이미지 추가
-            title: result,
-          };
-        }
-        return task;
-      });
-  
-      // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
-  
-      console.log("✅ 업데이트 성공!", updatedTasks);
-      identifyImage()
-      // 최신 데이터 다시 불러오기
-      LoadData();
-      
-    } catch (error) {
-      console.error("❌ 업데이트 실패:", error);
-    }
-  };
-  const updatedData = async (taskIndex: number,res) => {
-    try {
-      // Firestore에서 해당 userId의 문서 가져오기
-      const userDocRef = doc(fireStore, "userData", userId);
-      const userDocSnap = await getDoc(userDocRef);
-  
-      if (!userDocSnap.exists()) {
-        console.error("❌ 문서를 찾을 수 없음!");
-        return;
-      }
-      
-      const userData = userDocSnap.data();
-  
-      // 기존 todayTasks 배열을 업데이트
-      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
-        if (index === taskIndex) {
-          return {
-            ...task, // 기존 이미지에 새로운 이미지 추가
-            title: res,
-          };
-        }
-        return task;
-      });
-  
-      // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
-  
-      console.log("✅ 업데이트 성공!", updatedTasks);
-
-      // 최신 데이터 다시 불러오기
-      LoadData();
-      
-    } catch (error) {
-      console.error("❌ 업데이트 실패:", error);
-    }
-  };
-  const updateCompleted = async (taskIndex: number,res) => {
-    try {
-      // Firestore에서 해당 userId의 문서 가져오기
-      const userDocRef = doc(fireStore, "userData", userId);
-      const userDocSnap = await getDoc(userDocRef);
-  
-      if (!userDocSnap.exists()) {
-        console.error("❌ 문서를 찾을 수 없음!");
-        return;
-      }
-      
-      const userData = userDocSnap.data();
-      console.log(taskIndex)
-      // 기존 todayTasks 배열을 업데이트
-      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
-        if (index === taskIndex) {
-          return {
-            ...task, // 기존 이미지에 새로운 이미지 추가
-            completed: true,
-          };
-        }
-        return task;
-      });
-  
-      // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
-  
-      console.log("✅ 업데이트 성공!", updatedTasks);
-
-      // 최신 데이터 다시 불러오기
-      LoadData();
-      
-    } catch (error) {
-      console.error("❌ 업데이트 실패:", error);
-    }
-  };
-  const updateTaskImageA = async (newImage: string, taskIndex: number, file1, file2) => {
-    try {
-      // Firestore에서 해당 userId의 문서 가져오기
-      const userDocRef = doc(fireStore, "userData", userId);
-      const userDocSnap = await getDoc(userDocRef);
-  
-      if (!userDocSnap.exists()) {
-        console.error("❌ 문서를 찾을 수 없음!");
-        return;
-      }
-      
-      const userData = userDocSnap.data();
-
-      // 기존 todayTasks 배열을 업데이트
-      const updatedTasks = userData.todayTasks.map((task: any, index: number) => {
-        if (index === taskIndex) {
-          return {
-            ...task,
-            imagesAfter: [newImage], // 기존 이미지에 새로운 이미지 추가
-          };
-        }
-        return task;
-      });
-  
-      // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
-      identifyImageA("",file1, file2mageB, taskIndex)
-      console.log("✅ 업데이트 성공!", updatedTasks);
-
-      // 최신 데이터 다시 불러오기
-      LoadData();
-      
-    } catch (error) {
-      console.error("❌ 업데이트 실패:", error);
-    }
-  };
-  const handleImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]; // 첫 번째 파일 가져오기
-
-    if (!file) {
-      console.error("No file selected");
-      return;
-    }
-    
-    console.log("Selected file:", file); // 파일 로그 확인
-
-    if (!(file instanceof Blob)) {
-      console.error("File is not a valid Blob type");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    identifyImage(" ",file, index)
-    setImageA(file)
-    reader.onloadend = () => {
-      setImageBase64(reader.result as string);
-      updateTaskImage(reader.result as string, index);
-      console.log("Base64 Data:", reader.result);
-    };
-    reader.onerror = (error) => {
-      console.error("Error reading file:", error);
-    };
-  };
-  const handleImageUploadA = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]; // 첫 번째 파일 가져오기
-
-    if (!file) {
-      console.error("No file selected");
-      return;
-    }
-    
-    console.log("Selected file:", file); // 파일 로그 확인
-
-    if (!(file instanceof Blob)) {
-      console.error("File is not a valid Blob type");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    setImageB(file)
-    console.log("imageA : " + imageA)
-    reader.onloadend = () => {
-      setImageBase642(reader.result as string);
-      updateTaskImageA(reader.result as string, index as number, imageA, file);
-      console.log("Base64 Data:", reader.result);
-    };
-
-    reader.onerror = (error) => {
-      console.error("Error reading file:", error);
-    };
-  };
-  const LoadData = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(fireStore, "userData"));
-      if (!querySnapshot.empty) {
-        // auth.currentUser
-        if (!auth.currentUser) {
-          router.push("/signup");
-          setIsLoading(true);
-          return;
-        }
+                              <div>
+                              <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
+                                   완료된 공부 페이지를 업로드 해주세요
+                                 </label>
+                                 <div className="flex items-center justify-center w-full">
+                                   <label
+                                     htmlFor={`imageUpload-${task.id-1}`}
+                                     className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                   >
+                                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                       <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                       <p className="mb-2 text-sm text-gray-500">
+                                         <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
+                                       </p>
+                                       <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
+                                     </div>
+                                     <input
+                                       type="file"
+                                       id={`imageUpload-${task.id-1}`}
+                                       accept="image/*"
+                                       className="hidden"
+                                       onChange={(e) => handleImageUploadA(task.id-1, e)}
+                                       multiple
+                                     />
+                                   </label>
+                                 </div>
+                             </div>
+                             {userDatas.todayTasks[task.id-1].imagesAfter.length > 0 && (
+                               <div className="mt-6">
+                                 <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
+                                 <div className="grid grid-cols-2 gap-2">
+                                   {userDatas.todayTasks[task.id-1].imagesAfter.map((image, imgIndex) => (
+                                     <Image
+                                       key={imgIndex}
+                                       src={image || "/placeholder.svg"}
+                                       alt={`공부 페이지 ${imgIndex + 1}`}
+                                       width={200}
+                                       height={150}
+                                       className="rounded-lg w-full h-auto object-cover"
+                                     />
+                                   ))}
  
-        querySnapshot.docs.map((d) => {
-          if (d.data().email === auth.currentUser.email) {
-            setUserDatas(d.data());
-            setUserId(d.id);
-            console.log("Firestore Document Data:", d.data());
-          }
-        });
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("데이터 로딩 중 오류:", error);
-    }
-  };
-  const sendAI = (image1, image2) => {
-    
-  }
-  useEffect(() => {
-    LoadData();
-  }, []);
-
-  if (isLoading) {
-    return <div>데이터를 불러오는 중...</div>;
-  }
+ 
+                                 </div>
+ 
+                               </div>
+                             )}

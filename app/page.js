@@ -274,8 +274,7 @@ export default function StudyDashboard() {
         if (index === taskIndex) {
           return {
             ...task, // 기존 이미지에 새로운 이미지 추가
-            title: res,
-            startTime : new Date().toLocaleTimeString(),   
+            title: res, 
           };
         }
         return task;
@@ -283,7 +282,7 @@ export default function StudyDashboard() {
      
       // Firestore 업데이트
       await updateDoc(userDocRef, { todayTasks: updatedTasks });
-      alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
+      // alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
       console.log("✅ 업데이트 성공!", updatedTasks);
 
       // 최신 데이터 다시 불러오기
@@ -413,6 +412,8 @@ export default function StudyDashboard() {
   };
   const updateTaskImageA = async (newImage, taskIndex, file1, file2) => {
     try {
+
+      console.log("test : " + file2)
       // Firestore에서 해당 userId의 문서 가져오기
       const userDocRef = doc(fireStore, "userData", userId);
       const userDocSnap = await getDoc(userDocRef);
@@ -482,6 +483,7 @@ export default function StudyDashboard() {
   };
   const handleImageUploadA = (index, e) => {
     // 첫 번째 파일 가져오기
+    console.log("Excused")
     const file = event.target.files?.[0];
     if (userDatas.todayTasks[index].completed == true){
       alert("이미 완료된 챌린지 입니다. 내일 다시 시도 하세요.")
@@ -652,7 +654,7 @@ export default function StudyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                
+
                 {userDatas.todayTasks.map(task => (
                   <button
                     key={task.id}
@@ -704,6 +706,112 @@ export default function StudyDashboard() {
                               </div>
                             </div>
  
+=======
+                             <div>
+                               <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
+                                 오늘 공부할 페이지 이미지 업로드
+                               </label>
+                               <div className="flex items-center justify-center w-full">
+                                 <label
+                                   htmlFor={`imageUpload-${task.id-1}`}
+                                   className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                 >
+                                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                     <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                     <p className="mb-2 text-sm text-gray-500">
+                                       <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
+                                     </p>
+                                     <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
+                                   </div>
+                                   <input
+                                     type="file"
+                                     id={`imageUpload-${task.id-1}`}
+                                     accept="image/*"
+                                     className="hidden"
+                                     onChange={(e) => handleImageUpload(task.id-1, e)}
+                                     multiple
+                                   />
+
+                                 </label>
+
+                               </div>
+
+                               {userDatas.todayTasks[task.id-1].images.length > 0 && (
+                                    <div className="mt-6">
+                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {userDatas.todayTasks[task.id-1].images.map((image, imgIndex) => (
+                                          <Image
+                                            key={imgIndex}
+                                            src={image || "/placeholder.svg"}
+                                            alt={`공부 페이지 ${imgIndex + 1}`}
+                                            width={200}
+                                            height={150}
+                                            className="rounded-lg w-full h-auto object-cover"
+                                          />
+                                        ))}
+      
+      
+                                      </div>
+      
+                                    </div>
+                                  )}
+                                <br/>
+                               <div>
+                                <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
+                                    완료된 공부 페이지를 업로드 해주세요
+                                  </label>
+                                  <div className="flex items-center justify-center w-full">
+                                    <label
+                                      htmlFor={`imageUpload-${task.id-1}/2`}
+                                      className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
+                                    >
+                                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                        <p className="mb-2 text-sm text-gray-500">
+                                          <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
+                                        </p>
+                                        <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
+                                      </div>
+                                      <input
+                                        type="file"
+                                        id={`imageUpload-${task.id-1}/2`}
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={(e) => handleImageUploadA(task.id-1, e)}
+                                        multiple
+                                      />
+                                    </label>
+                                  </div>
+
+
+
+
+                                </div>
+                                {userDatas.todayTasks[task.id-1].imagesAfter.length > 0 && (
+                                    <div className="mt-6">
+                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
+                                      <div className="grid grid-cols-2 gap-2">
+                                        {userDatas.todayTasks[task.id-1].imagesAfter.map((image, imgIndex) => (
+                                          <Image
+                                            key={imgIndex}
+                                            src={image || "/placeholder.svg"}
+                                            alt={`공부 페이지 ${imgIndex + 1}`}
+                                            width={200}
+                                            height={150}
+                                            className="rounded-lg w-full h-auto object-cover"
+                                          />
+                                        ))}
+      
+      
+                                      </div>
+      
+                                    </div>
+                                  )}
+                             </div>
+                           </div>
+
+>>>>>>> Stashed changes
                           </DialogContent>
                         </Dialog>
                       </div>
@@ -734,6 +842,7 @@ export default function StudyDashboard() {
                     <span className="text-sm font-semibold text-blue-600">+{task.points}p</span>
                   </button>
                 ))}
+
               </div>
             </CardContent>
           </Card>
