@@ -676,35 +676,7 @@ export default function StudyDashboard() {
                               <DialogDescription>AI 기반 맞춤형 학습 관리 플랫폼</DialogDescription>
 
                             </DialogHeader>
-                            <div className="grid gap-4 py-4">
-                              <div>
-                                <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
-                                  오늘 공부할 페이지 이미지 업로드
-                                </label>
-                                <div className="flex items-center justify-center w-full">
-                                  <label
-                                    htmlFor={`imageUpload-${task.id-1}`}
-                                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100"
-                                  >
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                      <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                                      <p className="mb-2 text-sm text-gray-500">
-                                        <span className="font-semibold">클릭하여 업로드</span> 또는 드래그 앤 드롭
-                                      </p>
-                                      <p className="text-xs text-gray-500">PNG, JPG, GIF (최대 10MB)</p>
-                                    </div>
-                                    <input
-                                      type="file"
-                                      id={`imageUpload-${task.id-1}`}
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={(e) => handleImageUpload(task.id-1, e)}
-                                      multiple
-                                    />
-                                  </label>
-                                </div>
-                              </div>
-                            </div>
+
  
                              <div>
                                <label htmlFor={`imageUpload-${task.id-1}`} className="block text-sm font-medium text-gray-700 mb-2">
