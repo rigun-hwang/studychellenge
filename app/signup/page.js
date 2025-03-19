@@ -50,9 +50,9 @@ const SignUp = () => {
         level: 1,
         point: 0,
         todayTasks: [
-          { completed: false, id: 1, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] },
-          { completed: false, id: 2, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] },
-          { completed: false, id: 3, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] }
+          { completed: false, challenging : false, id: 1, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] },
+          { completed: false, challenging : false, id: 2, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] },
+          { completed: false, challenging : false, id: 3, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] }
         ],
         weeklyProgress: [
           { day: "월", minutes: 0 },

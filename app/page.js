@@ -49,8 +49,8 @@ export default function StudyDashboard() {
   const [userDatas, setUserDatas] = useState(null);
   
   const [userId, setUserId] = useState("");
-  const [imageA, setImageA] = useState(null);
-  const [imageB, setImageB] = useState(null)
+  const [imageA, setImageA] = useState();
+  const [imageB, setImageB] = useState([])
   const [result, setResult] = useState("");
   const router = useRouter();
 
@@ -91,24 +91,24 @@ export default function StudyDashboard() {
       });
     }
   };
-  const identifyImage = async (additionPrompt="", imageB, index) => {
-    try {
-      if (imageB) {
-        const imageParts = await fileToGenerativePart(imageB);
-        const result = await model.generateContent([
-          additionPrompt,
-          imageParts,
-        ]);
-        const response = await result.response;
-        const text = await response.text();
-        setResult(text.trim());
-        console.log(text.trim())
-        updatedData(index, text.trim())
-      }
-    } catch (error) {
-      console.log((error)?.message);
-    }
-  };
+  // const identifyImage = async (additionPrompt="", imageB, index) => {
+  //   try {
+  //     if (imageB) {
+  //       const imageParts = await fileToGenerativePart(imageB);
+  //       const result = await model.generateContent([
+  //         additionPrompt,
+  //         imageParts,
+  //       ]);
+  //       const response = await result.response;
+  //       const text = await response.text();
+  //       setResult(text.trim());
+  //       console.log(text.trim())
+  //       updatedData(index, text.trim())
+  //     }
+  //   } catch (error) {
+  //     console.log((error)?.message);
+  //   }
+  // };
   const identifyImageA = async (additionPrompt="", imageB,imageC, index) => {
     try {
       if (imageB) {
@@ -198,7 +198,6 @@ export default function StudyDashboard() {
           return {
             ...task,
             images: [newImage], // 기존 이미지에 새로운 이미지 추가
-            title: result,
           };
         }
         return task;
@@ -208,7 +207,7 @@ export default function StudyDashboard() {
       await updateDoc(userDocRef, { todayTasks: updatedTasks });
   
       console.log("✅ 업데이트 성공!", updatedTasks);
-      identifyImage()
+
       // 최신 데이터 다시 불러오기
       LoadData();
       
@@ -221,6 +220,24 @@ export default function StudyDashboard() {
   }
   const StartChallenge = async (taskIndex) => {
     try {
+      let flag = false;
+      userDatas.todayTasks.map((task) =>{
+        console.log("complete : " + task.completed)
+        if(task.challenging == true && flag != true){
+          alert("지금 하고 있는 챌린지를 먼저 완료해주세요.")
+          flag = true;
+        }
+      })
+      if (userDatas.todayTasks[taskIndex].completed == true)
+      {
+        alert("이미 완료된 챌린지 입니다.")
+        flag = true;
+      }
+      if (flag == true)
+        return;
+      
+      setImageA( )
+      setImageB( )
       // Firestore에서 해당 userId의 문서 가져오기
       const userDocRef = doc(fireStore, "userData", userId);
       const userDocSnap = await getDoc(userDocRef);
@@ -281,7 +298,8 @@ export default function StudyDashboard() {
       });
      
       // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+
+      
       // alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
       console.log("✅ 업데이트 성공!", updatedTasks);
 
@@ -437,7 +455,7 @@ export default function StudyDashboard() {
       });
   
       // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
+
       identifyImageA("",file1, file2, taskIndex)
       console.log("✅ 업데이트 성공!", updatedTasks);
 
@@ -448,9 +466,18 @@ export default function StudyDashboard() {
       console.error("❌ 업데이트 실패:", error);
     }
   };
-  const handleImageUpload = (index, e) => {
+  const handleImageUpload = (index, event) => {
+    let flag = false;
+
+    if (flag == true) {
+      return
+    }
     if (userDatas.todayTasks[index].completed == true){
       alert("이미 완료된 챌린지 입니다. 내일 다시 시도 하세요.")
+      return
+    }
+    if (userDatas.todayTasks[index].challenging != true){
+      alert("먼저 챌린지를 시작해 주세요")
       return
     }
     const file = event.target.files?.[0]; // 첫 번째 파일 가져오기
@@ -469,7 +496,7 @@ export default function StudyDashboard() {
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    identifyImage("이게 오늘 내가 공부할 페이지의 이미지야. 이것의 단원명과 무엇인지를 알려줘, 하지만 공부랑 관련이 안되어 있으면, '공부와 관련된 이미지를 준비해 주세요' 라고만 말해줘",file, index)
+
     setImageA(file)
     identifyImageDifficulty(" ", file, index)
     reader.onloadend = () => {
@@ -481,7 +508,12 @@ export default function StudyDashboard() {
       console.error("Error reading file:", error);
     };
   };
-  const handleImageUploadA = (index, e) => {
+  const handleImageUploadA = (index, event) => {
+    let flag = false;
+
+    if (flag == true) {
+      return
+    }
     // 첫 번째 파일 가져오기
     console.log("Excused")
     const file = event.target.files?.[0];
@@ -489,7 +521,10 @@ export default function StudyDashboard() {
       alert("이미 완료된 챌린지 입니다. 내일 다시 시도 하세요.")
       return
     }
-    
+    if (userDatas.todayTasks[index].challenging != true){
+      alert("먼저 챌린지를 시작해 주세요")
+      return
+    }
     if (!file) {
       console.error("No file selected");
       return;
@@ -583,6 +618,7 @@ export default function StudyDashboard() {
   };
 
 
+
   if (isLoading) {
     return <div>데이터를 불러오는 중...</div>;
   }
@@ -602,7 +638,7 @@ export default function StudyDashboard() {
         <div className="text-center mb-12 pt-8">
           <h1 className="text-4xl font-bold mb-4">Study Challenge</h1>
           <p className="text-gray-600 mb-8">AI 기반 맞춤형 학습 관리 플랫폼</p>
-          {/*<button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-full font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all">*/}
+          
           {/*  학습 시작하기*/}
           {/*</button>*/}
         </div>
@@ -707,20 +743,18 @@ export default function StudyDashboard() {
 
                                </div>
 
-                               {userDatas.todayTasks[task.id-1].images.length > 0 && (
+                               {imageA && (
                                     <div className="mt-6">
                                       <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
                                       <div className="grid grid-cols-2 gap-2">
-                                        {userDatas.todayTasks[task.id-1].images.map((image, imgIndex) => (
                                           <Image
-                                            key={imgIndex}
-                                            src={image || "/placeholder.svg"}
-                                            alt={`공부 페이지 ${imgIndex + 1}`}
+                                            key={task.id-1}
+                                            src={imageBase64 || "/placeholder.svg"}
+                                            alt={`공부 페이지 ${task.id}`}
                                             width={200}
                                             height={150}
                                             className="rounded-lg w-full h-auto object-cover"
                                           />
-                                        ))}
       
       
                                       </div>
@@ -759,22 +793,18 @@ export default function StudyDashboard() {
 
 
                                 </div>
-                                {userDatas.todayTasks[task.id-1].imagesAfter.length > 0 && (
+                                {imageB && (
                                     <div className="mt-6">
                                       <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
                                       <div className="grid grid-cols-2 gap-2">
-                                        {userDatas.todayTasks[task.id-1].imagesAfter.map((image, imgIndex) => (
                                           <Image
-                                            key={imgIndex}
-                                            src={image || "/placeholder.svg"}
-                                            alt={`공부 페이지 ${imgIndex + 1}`}
+                                            key={task.id-1}
+                                            src={imageBase642 || "/placeholder.svg"}
+                                            alt={`공부 페이지 ${task.id}`}
                                             width={200}
                                             height={150}
                                             className="rounded-lg w-full h-auto object-cover"
                                           />
-                                        ))}
-      
-      
                                       </div>
       
                                     </div>
