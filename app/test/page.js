@@ -1,31 +1,34 @@
-"use client";
+'use client';
 
-import React, { useRef, useEffect } from "react";
-import confetti from "canvas-confetti"; // 여기서 canvas-confetti를 사용!
+import React, { useState } from 'react';
+import AnimatedModal from '@/util/Modal';
 
-export default function FireworksButton() {
-  const refAnimationInstance = useRef(null);
-
-  useEffect(() => {
-    // confetti 인스턴스 생성
-    refAnimationInstance.current = confetti.create(null, { resize: true, useWorker: true });
-  }, []);
-
-  const fire = () => {
-    if (refAnimationInstance.current) {
-      refAnimationInstance.current({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
-    }
-  };
+export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
-    <div>
-      <button onClick={fire} className="p-4 bg-blue-500 text-white rounded">
-        성공! 🎉
+    <div className="min-h-screen flex flex-col items-center justify-center">
+      <h1 className="text-2xl mb-4">Prop 기반 모달 예제</h1>
+      <button
+        onClick={() => setIsModalOpen(true)}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+      >
+        모달 열기
       </button>
+
+      <AnimatedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="✨ 타이틀입니다"
+        description="이곳은 모달의 설명 또는 본문입니다. 텍스트는 props로 전달됩니다."
+      >
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className="mt-4 px-4 py-2 bg-gray-200 rounded-lg"
+        >
+          닫기
+        </button>
+      </AnimatedModal>
     </div>
   );
 }

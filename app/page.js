@@ -23,7 +23,7 @@ import {
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
+import AnimatedModal from '@/util/Modal';
 import 이미지 from './clock.png'
 import confetti from "canvas-confetti"; // 여기서 canvas-confetti를 사용!
 
@@ -48,6 +48,10 @@ const convertImageToBase64 = async (file) => {
 export default function StudyDashboard() {
   const [userDatas, setUserDatas] = useState(null);
   
+  const [challengStartModel, setChallengStartModel] = useState(false);
+  const [challengStartDes, setChallengDesModel] = useState("");
+  const [challengEndModel, setChallengEndModel] = useState(false);
+  const [challengEndDes, setChallengDesModelEnd] = useState("");
   const [userId, setUserId] = useState("");
   const [imageA, setImageA] = useState();
   const [imageB, setImageB] = useState([])
@@ -263,9 +267,10 @@ export default function StudyDashboard() {
      
       // Firestore 업데이트
       await updateDoc(userDocRef, { todayTasks: updatedTasks });
-      alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
-      console.log("✅ 업데이트 성공!", updatedTasks);
 
+      setChallengDesModel(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
+      console.log("✅ 업데이트 성공!", updatedTasks);
+      setChallengStartModel(true)
       // 최신 데이터 다시 불러오기
       LoadData();
       
@@ -354,9 +359,10 @@ export default function StudyDashboard() {
       await updateDoc(userDocRef, { todayTasks: updatedTasks });
       await updateDoc(userDocRef, { weeklyProgress: updatedProgress });
       console.log()
-      alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 종료!")
+
       console.log("✅ 업데이트 성공!", updatedTasks);
-      
+      setChallengDesModelEnd(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 종료!")
+      setChallengEndModel(true)
       // 최신 데이터 다시 불러오기
       LoadData();
       
@@ -420,7 +426,17 @@ export default function StudyDashboard() {
       await updateDoc(userDocRef, { point : String(Number(userDatas.point) + res) });
   
       console.log("✅ 업데이트 성공!");
+      let count = 0;
+      userDatas.todayTasks.map((task) =>{
+        if (task.completed == true) { 
+          count += 1;
+        }
+      })
 
+      if (count == 2){
+        alert("모든 챌린지를 완료 했으니 새로운 챌린지를 시작합니다!")
+        reStart(taskIndex);
+      }
       // 최신 데이터 다시 불러오기
       LoadData();
       
@@ -448,7 +464,7 @@ export default function StudyDashboard() {
         if (index === taskIndex) {
           return {
             ...task,
-            imagesAfter: [newImage], // 기존 이미지에 새로운 이미지 추가
+            imagesAfter: [newImage], // 기존 이 미지에 새로운 이미지 추가
           };
         }
         return task;
@@ -508,6 +524,28 @@ export default function StudyDashboard() {
       console.error("Error reading file:", error);
     };
   };
+  const reStart = async (index) => {
+    const userDocRef = doc(fireStore, "userData", userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      console.error("❌ 문서를 찾을 수 없음!");
+      return;
+    }
+    
+    const userData = userDocSnap.data();
+
+    // 기존 todayTasks 배열을 업데이트
+    const updatedTasks = userData.todayTasks.map((task, index) => {
+      return { completed: false, challenging : false, id: index + 1, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] };
+      return task;
+    });
+   
+    // Firestore 업데이트
+    await updateDoc(userDocRef, { todayTasks: updatedTasks });    
+
+    LoadData()
+  }
   const handleImageUploadA = (index, event) => {
     let flag = false;
 
@@ -629,8 +667,16 @@ export default function StudyDashboard() {
     }
   }
 
-  return (
+  function openChallenge(){
+    setImageA( )
+    setImageB( )
+  }
 
+  return (
+  <div>
+ 
+
+  <div>
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
 
       <div className="p-6 max-w-6xl mx-auto">
@@ -703,7 +749,7 @@ export default function StudyDashboard() {
                         )}
                         <Dialog key={task.id-1}>
                         
-                          <DialogTrigger asChild>
+                          <DialogTrigger asChild onClick={()=>{openChallenge()}}>
                             <p variant="outline">ㅤ</p>
                           </DialogTrigger>
                           <DialogContent className="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
@@ -745,7 +791,7 @@ export default function StudyDashboard() {
 
                                {imageA && (
                                     <div className="mt-6">
-                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
+                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부하기전 이미지</h2>
                                       <div className="grid grid-cols-2 gap-2">
                                           <Image
                                             key={task.id-1}
@@ -795,7 +841,7 @@ export default function StudyDashboard() {
                                 </div>
                                 {imageB && (
                                     <div className="mt-6">
-                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 공부 페이지</h2>
+                                      <h2 className="text-lg font-semibold text-gray-800 mb-4">공부완료한후 이미지</h2>
                                       <div className="grid grid-cols-2 gap-2">
                                           <Image
                                             key={task.id-1}
@@ -831,7 +877,7 @@ export default function StudyDashboard() {
                             </div>
                             <p>공부하기전 이미지와 공부한후 이미지를 촬영후 챌린지 옆 동그라미를 눌러 완료해주세요.</p>
                             <br/>
-                            <Button onClick={()=>{StartChallenge(task.id-1)}} disabled={userDatas.todayTasks[task.id-1].challenging}>챌린지 시작!!</Button>
+                            <Button onClick={()=>{StartChallenge(task.id-1)}} disabled={userDatas.todayTasks[task.id-1].challenging} variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white font-medium">챌린지 시작!!</Button>
                        
                           </DialogHeader>
 
@@ -893,5 +939,7 @@ export default function StudyDashboard() {
         </div>
       </div>
     </div>
+  </div>
+  </div>
   );
 };
