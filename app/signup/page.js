@@ -55,13 +55,13 @@ const SignUp = () => {
           { completed: false, challenging : false, id: 3, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] }
         ],
         weeklyProgress: [
-          { day: "월", minutes: 0 },
-          { day: "화", minutes: 0 },
-          { day: "수", minutes: 0 },
-          { day: "목", minutes: 0 },
-          { day: "금", minutes: 0 },
-          { day: "토", minutes: 0 },
-          { day: "일", minutes: 0 }
+          { day: "월", minutes: 0, todayTasks: [" "]},
+          { day: "화", minutes: 0, todayTasks: [" "] },
+          { day: "수", minutes: 0, todayTasks: [" "] },
+          { day: "목", minutes: 0, todayTasks: [" "] },
+          { day: "금", minutes: 0, todayTasks: [" "] },
+          { day: "토", minutes: 0, todayTasks: [" "] },
+          { day: "일", minutes: 0, todayTasks: [" "] }
         ],
         username: userName,
         age: age,

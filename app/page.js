@@ -26,6 +26,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import AnimatedModal from '@/util/Modal';
 import 이미지 from './clock.png'
 import confetti from "canvas-confetti"; // 여기서 canvas-confetti를 사용!
+import AdFitBanner from "@/component/ui/KakoAdfit.tsx"
 
 const truncateText = (text , maxLength = 8) => {
   return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
@@ -47,7 +48,7 @@ const convertImageToBase64 = async (file) => {
 
 export default function StudyDashboard() {
   const [userDatas, setUserDatas] = useState(null);
-  
+  const [todayTip, setTodayTip] = useState("");
   const [challengStartModel, setChallengStartModel] = useState(false);
   const [challengStartDes, setChallengDesModel] = useState("");
   const [challengEndModel, setChallengEndModel] = useState(false);
@@ -64,6 +65,7 @@ export default function StudyDashboard() {
   const [completed, setCompleted] = useState(false)
   const refAnimationInstance = useRef(null);
   const [progress, setProgress] = useState({});
+  const [studyContent, setStudyContent] = useState("")
   function getWeekNumber(date) {
     const d = new Date(date.getTime());
     d.setHours(0, 0, 0, 0);
@@ -74,6 +76,7 @@ export default function StudyDashboard() {
 
   useEffect(() => {
     LoadData()
+
   }, []);
 
   // 데이터 업데이트 함수
@@ -84,6 +87,7 @@ export default function StudyDashboard() {
   useEffect(() => {
     // confetti 인스턴스 생성
     refAnimationInstance.current = confetti.create(null, { resize: true, useWorker: true });
+    getTodayTip()
   }, []);
 
   const fire = () => {
@@ -113,6 +117,20 @@ export default function StudyDashboard() {
   //     console.log((error)?.message);
   //   }
   // };
+  const getTodayTip = async () => {
+    try {
+      const result = await model.generateContent([
+        "공부할때 알면 유용한 학습팁을 50글자 이내로 말해줘"
+      ]);
+
+      const response = await result.response;
+      const text = await response.text();
+      setTodayTip(text.trim());
+      console.log("학습팁 : "+ text.trim())
+    } catch (error) {
+      console.log((error)?.message);
+    }
+  };
   const identifyImageA = async (additionPrompt="", imageB,imageC, index) => {
     try {
       if (imageB) {
@@ -123,7 +141,7 @@ export default function StudyDashboard() {
         const result = await model.generateContent([
           imageParts,
           imageParts2,
-          '첫 이미지는 공부하기전이고, 두번째 이미지는 공부한 후 이미지야. 공부가 100%완료 되었다고 판단이 되면 "true", 없거나 공부와 관련이 없으면 "false"만 출력하세요.',
+          '첫 이미지는 공부하기전이고, 두번째 이미지는 공부한 후 이미지야. 공부가 완료 되었다고 판단이 되면 "true", 공부가 완료 되지 않았거나 공부와 관련이 없으면 "false"만 출력하세요.',
         ]);
         console.log("index : " +index)
         const response = await result.response;
@@ -133,7 +151,7 @@ export default function StudyDashboard() {
           fire()
           updateUsersPoint(index, Number(userDatas.todayTasks[index].points))
         }else{
-          alert("챌린지 실패!, 다시 시도하거나 포기하고싶으면 아래의 버튼을 눌러주세요")
+          alert("챌린지 실패!, 다시 시도하세요!")
         }
         console.log(text.trim())
 
@@ -164,6 +182,10 @@ export default function StudyDashboard() {
     } catch (error) {
       console.log((error)?.message);
     }
+  };
+  const InputChange = (event) => {
+    setStudyContent(event.target.value);
+    console.log(event.target.value) // 값 변경 시 상태 업데이트
   };
   const fileToGenerativePart = async (file) => {
     return new Promise((resolve, reject) => {
@@ -252,7 +274,8 @@ export default function StudyDashboard() {
       }
       
       const userData = userDocSnap.data();
-  
+      updatedData(taskIndex, studyContent)
+      console.log("study content : " + studyContent);
       // 기존 todayTasks 배열을 업데이트
       const updatedTasks = userData.todayTasks.map((task, index) => {
         if (index === taskIndex) {
@@ -301,9 +324,9 @@ export default function StudyDashboard() {
         }
         return task;
       });
-     
+      console.log("adadada : " + res)
       // Firestore 업데이트
-
+      await updateDoc(userDocRef, { todayTasks: updatedTasks });
       
       // alert(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
       console.log("✅ 업데이트 성공!", updatedTasks);
@@ -315,9 +338,8 @@ export default function StudyDashboard() {
       console.error("❌ 업데이트 실패:", error);
     }
   };
-  const updateCompleted = async (taskIndex,res) => {
+  const updateCompleted = async (taskIndex, res) => {
     try {
-      // Firestore에서 해당 userId의 문서 가져오기
       const userDocRef = doc(fireStore, "userData", userId);
       const userDocSnap = await getDoc(userDocRef);
   
@@ -325,47 +347,63 @@ export default function StudyDashboard() {
         console.error("❌ 문서를 찾을 수 없음!");
         return;
       }
-      
+  
       const userData = userDocSnap.data();
-      console.log(taskIndex)
-      // 기존 todayTasks 배열을 업데이트
+  
+      // 1. todayTasks 업데이트
+      const now = new Date();
+      const currentDay = ["일", "월", "화", "수", "목", "금", "토"][now.getDay()];
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  
       const updatedTasks = userData.todayTasks.map((task, index) => {
         if (index === taskIndex) {
           return {
-            ...task, // 기존 이미지에 새로운 이미지 추가
+            ...task,
             completed: true,
-            challenging : false,
-            end:new Date().toLocaleTimeString(),
+            challenging: false,
+            end: now.toTimeString().slice(0, 5), // 예: "14:30"
           };
         }
         return task;
       });
-      const dayNames = ["월", "화", "수", "목","금","토","일"]
+  
+      // 2. weeklyProgress 업데이트
       const updatedProgress = userData.weeklyProgress.map((task, index) => {
-        if (userDatas.weeklyProgress[index].day == dayNames[Number(new Date().getDay())]){
-          return{
-            ...task,
-            minutes : task.minutes + (Number(new Date().toLocaleTimeString()[3])-Number(updatedTasks[taskIndex].startTime[3])) * 60 + Number((new Date().toLocaleTimeString()[5]+new Date().toLocaleTimeString()[6])-(updatedTasks[taskIndex].startTime[5]+updatedTasks[taskIndex].startTime[6]))
-          }
-        }else{
+        const originalTask = userData.weeklyProgress[index];
+  
+        if (originalTask.day === currentDay) {
+          const startTime = updatedTasks[taskIndex].startTime; // 예: "14:30"
+          const [startHour, startMinute] = startTime.split(":").map(Number);
+          const startTotalMinutes = startHour * 60 + startMinute;
+          const timeSpent = currentMinutes - startTotalMinutes;
+  
           return {
             ...task,
-            minutes : 0
-          }
+            todayTasks: [...(task.todayTasks || []), userData.todayTasks[taskIndex].title],
+            minutes: task.minutes + (Number(new Date().toLocaleTimeString()[3])-Number(updatedTasks[taskIndex].startTime[3])) * 60 + Number((new Date().toLocaleTimeString()[5]+new Date().toLocaleTimeString()[6])-(updatedTasks[taskIndex].startTime[5]+updatedTasks[taskIndex].startTime[6])),
+          };
         }
+  
+        return task;
       });
-      console.log((Number(new Date().toLocaleTimeString()[3])-Number(updatedTasks[taskIndex].startTime[3])) * 60 + Number((new Date().toLocaleTimeString()[5]+new Date().toLocaleTimeString()[6])-(updatedTasks[taskIndex].startTime[5]+updatedTasks[taskIndex].startTime[6])))
-      // Firestore 업데이트
-      await updateDoc(userDocRef, { todayTasks: updatedTasks });
-      await updateDoc(userDocRef, { weeklyProgress: updatedProgress });
-      console.log()
-
+  
+      // 3. Firestore 업데이트
+      await updateDoc(userDocRef, {
+        todayTasks: updatedTasks,
+        weeklyProgress: updatedProgress,
+      });
+  
       console.log("✅ 업데이트 성공!", updatedTasks);
-      setChallengDesModelEnd(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 종료!")
-      setChallengEndModel(true)
-      // 최신 데이터 다시 불러오기
+  
+      // 4. 종료 메시지 표시
+      setChallengDesModelEnd(
+        `${now.getHours()}시 ${now.getMinutes()}분 챌린지 종료!`
+      );
+      setChallengEndModel(true);
+  
+      // 5. 최신 데이터 다시 불러오기
       LoadData();
-      
+  
     } catch (error) {
       console.error("❌ 업데이트 실패:", error);
     }
@@ -517,7 +555,7 @@ export default function StudyDashboard() {
     identifyImageDifficulty(" ", file, index)
     reader.onloadend = () => {
       setImageBase64(reader.result);
-      updateTaskImage(reader.result, index);
+
       console.log("Base64 Data:", reader.result);
     };
     reader.onerror = (error) => {
@@ -729,9 +767,9 @@ export default function StudyDashboard() {
               <CardTitle className="text-xl font-bold flex items-center gap-2">
                 <Sparkles className="text-blue-600" />
                 오늘의 챌린지
-                <span className="ml-2 text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                {/* <span className="ml-2 text-sm bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
                   {userDatas.dailyStreak}일째
-                </span>
+                </span> */}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -872,11 +910,15 @@ export default function StudyDashboard() {
                             <DialogTitle>Study Challenge</DialogTitle> 
                             <DialogDescription>AI 기반 맞춤형 학습 관리 플랫폼</DialogDescription>
                             <div className='flex'>
-                              <Image src={이미지} width={250} height={250} alt = "시계 이미지" className="mx-auto"/>
+                              <Image src={이미지} width={200} height={200} alt = "시계 이미지" className="mx-auto"/>
                               
                             </div>
                             <p>공부하기전 이미지와 공부한후 이미지를 촬영후 챌린지 옆 동그라미를 눌러 완료해주세요.</p>
                             <br/>
+                            <p>학습 내용 입력</p>
+                            <Input onChange={(e)=>{InputChange(e)}} placeholder={userDatas.todayTasks[task.id-1].title}/>
+                            <br/>
+                            <p>챌린지 시작하기</p>
                             <Button onClick={()=>{StartChallenge(task.id-1)}} disabled={userDatas.todayTasks[task.id-1].challenging} variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white font-medium">챌린지 시작!!</Button>
                        
                           </DialogHeader>
@@ -930,12 +972,12 @@ export default function StudyDashboard() {
               <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50">
                 <h3 className="font-bold text-lg mb-2 text-blue-800">효율적인 암기법 🧠</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  새로운 정보를 배울 때 기존 지식과 연결지어 생각하면 장기 기억으로
-                  저장되기 쉽습니다. 오늘의 학습에서 시도해보세요!
+                  {todayTip}
                 </p>
               </div>
             </CardContent>
           </Card>
+          <AdFitBanner />
         </div>
       </div>
     </div>
