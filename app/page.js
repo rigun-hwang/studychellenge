@@ -77,12 +77,54 @@ export default function StudyDashboard() {
   useEffect(() => {
     LoadData()
 
+
   }, []);
+  const sendEmail = async (data) => {
+
+    const res = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: data.email,
+        subject: '스터디 챌린지 - 주간리포트',
+        text: `안녕하세요 스터디 챌리지 입니다. 스터디 챌린지에서는 매주 공부 리포트를 보내드립니다.
+        1. ${data.weeklyProgress[0].day}요일
+          - 공부시간 : ${data.weeklyProgress[0].minutes}분
+          - 공부내용 : ${data.weeklyProgress[0].todayTasks.map((task)=>{return task + " "})} 입니다.
+        2. ${data.weeklyProgress[1].day}요일
+          - 공부시간 : ${data.weeklyProgress[1].minutes}분
+          - 공부내용 : ${data.weeklyProgress[1].todayTasks.map((task)=>{return task + " "})} 입니다.
+        3. ${data.weeklyProgress[2].day}요일
+          - 공부시간 : ${data.weeklyProgress[2].minutes}분
+          - 공부내용 : ${data.weeklyProgress[2].todayTasks.map((task)=>{return task + " "})} 입니다.
+        4. ${data.weeklyProgress[3].day}요일
+          - 공부시간 : ${data.weeklyProgress[3].minutes}분
+          - 공부내용 : ${data.weeklyProgress[3].todayTasks.map((task)=>{return task + " "})} 입니다.
+        5. ${data.weeklyProgress[4].day}요일
+          - 공부시간 : ${data.weeklyProgress[4].minutes}분
+          - 공부내용 : ${data.weeklyProgress[4].todayTasks.map((task)=>{return task + " "})} 입니다.
+        6. ${data.weeklyProgress[5].day}요일
+          - 공부시간 : ${data.weeklyProgress[5].minutes}분
+          - 공부내용 : ${data.weeklyProgress[5].todayTasks.map((task)=>{return task + " "})} 입니다.
+        7. ${data.weeklyProgress[6].day}요일
+          - 공부시간 : ${data.weeklyProgress[6].minutes}분
+          - 공부내용 : ${data.weeklyProgress[6].todayTasks.map((task)=>{return task + " "})} 입니다.
+          `,
+
+      }),
+    })
+
+    const result = await res.json()
+  }
+
 
   // 데이터 업데이트 함수
   const updateProgress = (newProgress) => {
     setProgress(newProgress);
     localStorage.setItem("weeklyProgress", JSON.stringify(newProgress));
+    sendEmail()
   };
   useEffect(() => {
     // confetti 인스턴스 생성
@@ -369,6 +411,8 @@ export default function StudyDashboard() {
   
       // 2. weeklyProgress 업데이트
       const updatedProgress = userData.weeklyProgress.map((task, index) => {
+
+
         const originalTask = userData.weeklyProgress[index];
   
         if (originalTask.day === currentDay) {
@@ -649,8 +693,10 @@ export default function StudyDashboard() {
         });
                 // 현재 연도 및 주차 계산
         const now = new Date();
+
         const currentWeek = getWeekNumber(now);
-        const lastWeek = parseInt(localStorage.getItem("lastUpdatedWeek"), 10) || 0;
+
+        const lastWeek = 12;
 
         if (currentWeek !== lastWeek) {
                   // 새 주차가 시작되었으므로 초기화
@@ -662,7 +708,7 @@ export default function StudyDashboard() {
             console.error("❌ 문서를 찾을 수 없음!");
             return;
           }
-                  
+
           const userData = userDocSnap.data();
 
           const dayNames = ["월", "화", "수", "목","금","토","일"]
@@ -673,10 +719,12 @@ export default function StudyDashboard() {
             }
                     
           });
+          sendEmail(userData)
 
           await updateDoc(userDocRef, { weeklyProgress: updatedProgress });
           localStorage.setItem("lastUpdatedWeek", currentWeek);
           setProgress({});
+
         } else {
                 // 기존 데이터 불러오기
           const storedData = JSON.parse(localStorage.getItem("weeklyProgress")) || {};
@@ -915,10 +963,10 @@ export default function StudyDashboard() {
                             </div>
                             <p>공부하기전 이미지와 공부한후 이미지를 촬영후 챌린지 옆 동그라미를 눌러 완료해주세요.</p>
                             <br/>
-                            <p>학습 내용 입력</p>
+                            <p><strong>학습 내용 입력</strong></p>
                             <Input onChange={(e)=>{InputChange(e)}} placeholder={userDatas.todayTasks[task.id-1].title}/>
                             <br/>
-                            <p>챌린지 시작하기</p>
+                            <p><strong>챌린지 시작하기</strong></p>
                             <Button onClick={()=>{StartChallenge(task.id-1)}} disabled={userDatas.todayTasks[task.id-1].challenging} variant="secondary" className="bg-blue-600 hover:bg-blue-600 text-white font-medium">챌린지 시작!!</Button>
                        
                           </DialogHeader>
