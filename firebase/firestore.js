@@ -1,6 +1,6 @@
 /*eslint-disable */
 
-import {app, auth} from "./firebase/firebasedb"
+import {app, auth} from "./firebasedb"
 import {getFirestore} from "firebase/firestore"
 
 const fireStore = getFirestore(app)
