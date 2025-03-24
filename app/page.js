@@ -626,6 +626,35 @@ export default function StudyDashboard() {
 
     LoadData()
   }
+  const rePogui = async (index) => {
+    let flag = false;
+
+    if (flag == true)
+      return;
+    const userDocRef = doc(fireStore, "userData", userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      console.error("❌ 문서를 찾을 수 없음!");
+      return;
+    }
+    
+    const userData = userDocSnap.data();
+
+    // 기존 todayTasks 배열을 업데이트
+    const updatedTasks = userData.todayTasks.map((task, taskindex) => {
+      if (taskindex == index){
+        return { completed: false, challenging : false, id: index + 1, points: 0, title: "눌러서 입력!", images:[], imagesAfter : [] };
+      }else{
+        return task;
+      }
+    });
+   
+    // Firestore 업데이트
+    await updateDoc(userDocRef, { todayTasks: updatedTasks });    
+    alert("챌린지 포기.. 다음에 다시시도!")
+    LoadData()
+  }
   const handleImageUploadA = (index, event) => {
     let flag = false;
 
@@ -940,6 +969,7 @@ export default function StudyDashboard() {
                                     </div>
                                   )}
                              </div>
+                             <Button onClick={()=>{rePogui(task.id-1)}} varient="destructive" disabled={!userDatas.todayTasks[task.id-1].challenging}>챌린지 포기하기</Button>
 
 
                           </DialogContent>
