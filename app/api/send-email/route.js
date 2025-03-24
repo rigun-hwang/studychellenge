@@ -1,4 +1,4 @@
-/*eslint-disable*/
+
 import { NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
 
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ message: 'Email sent successfully', info })
-  } catch (error: any) {
+  } catch (error) {
     console.error(error)
     return NextResponse.json({ message: 'Failed to send email', error: error.message }, { status: 500 })
   }
