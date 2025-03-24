@@ -695,7 +695,7 @@ export default function StudyDashboard() {
 
         const currentWeek = getWeekNumber(now);
 
-        const lastWeek = parseInt(localStorage.getItem("lastUpdatedWeek"), 10) || 0;
+        const lastWeek = 12;
 
         if (currentWeek !== lastWeek) {
                   // 새 주차가 시작되었으므로 초기화
