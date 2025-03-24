@@ -175,7 +175,7 @@ export default function StudyDashboard() {
   const identifyImageA = async (additionPrompt="", imageB,imageC, index) => {
     try {
       if (imageB) {
-        
+        console.log("adad")
         const imageParts = await fileToGenerativePart(imageB);
         const imageParts2 = await fileToGenerativePart(imageC);
         console.log(imageC)
@@ -528,7 +528,7 @@ export default function StudyDashboard() {
   const updateTaskImageA = async (newImage, taskIndex, file1, file2) => {
     try {
 
-      console.log("test : " + file2)
+      console.log("testadad : " + file2)
       // Firestore에서 해당 userId의 문서 가져오기
       const userDocRef = doc(fireStore, "userData", userId);
       const userDocSnap = await getDoc(userDocRef);
