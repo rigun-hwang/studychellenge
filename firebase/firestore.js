@@ -1,4 +1,4 @@
-import app from "../firebase/firebasedb"
+import app from "@/firebase/firebasedb"
 import {getFirestore} from "firebase/firestore"
 
 const fireStore = getFirestore(app)
