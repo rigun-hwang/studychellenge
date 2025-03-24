@@ -556,8 +556,6 @@ export default function StudyDashboard() {
       identifyImageA("",file1, file2, taskIndex)
       console.log("✅ 업데이트 성공!", updatedTasks);
 
-      // 최신 데이터 다시 불러오기
-      LoadData();
       
     } catch (error) {
       console.error("❌ 업데이트 실패:", error);
@@ -662,7 +660,7 @@ export default function StudyDashboard() {
     console.log("imageA : " + imageA)
     reader.onloadend = () => {
       setImageBase642(reader.result);
-      // updateTaskImageA(reader.result, index, imageA, file);
+      updateTaskImageA(reader.result, index, imageA, file);
       console.log("Base64 Data:", reader.result);
     };
     
