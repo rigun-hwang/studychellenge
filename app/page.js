@@ -695,13 +695,14 @@ export default function StudyDashboard() {
 
         const currentWeek = getWeekNumber(now);
 
-        const lastWeek = 12;
+        const lastWeek = parseInt(localStorage.getItem("lastUpdatedWeek"), 10) || 0;
 
         if (currentWeek !== lastWeek) {
                   // 새 주차가 시작되었으므로 초기화
                   // Firestore에서 해당 userId의 문서 가져오기
           const userDocRef = doc(fireStore, "userData", id);
           const userDocSnap = await getDoc(userDocRef);
+
               
           if (!userDocSnap.exists()) {
             console.error("❌ 문서를 찾을 수 없음!");
@@ -709,7 +710,7 @@ export default function StudyDashboard() {
           }
 
           const userData = userDocSnap.data();
-
+          sendEmail(userData)
           const dayNames = ["월", "화", "수", "목","금","토","일"]
           const updatedProgress = userData.weeklyProgress.map((task, index) => {
             return {
@@ -718,7 +719,6 @@ export default function StudyDashboard() {
             }
                     
           });
-          sendEmail(userData)
 
           await updateDoc(userDocRef, { weeklyProgress: updatedProgress });
           localStorage.setItem("lastUpdatedWeek", currentWeek);
