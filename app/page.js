@@ -335,6 +335,7 @@ export default function StudyDashboard() {
       setChallengDesModel(new Date().toLocaleTimeString()[3]+"시"+" " + new Date().toLocaleTimeString()[5]+ new Date().toLocaleTimeString()[6]+"분" + "챌린지 시작!")
       console.log("✅ 업데이트 성공!", updatedTasks);
       setChallengStartModel(true)
+      alert("공부하기전 이미지를 한장 촬영하고, 공부한 후 이미지를 촬영해서, 공부할 것 옆에 있는 동그라미를 눌러 챌린지를 완료하세요.")
       // 최신 데이터 다시 불러오기
       LoadData();
       
