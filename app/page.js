@@ -80,7 +80,7 @@ export default function StudyDashboard() {
 
   }, []);
   const sendEmail = async (data) => {
-
+    console.log(data.email)
     const res = await fetch('/api/send-email', {
       method: 'POST',
       headers: {
@@ -124,7 +124,6 @@ export default function StudyDashboard() {
   const updateProgress = (newProgress) => {
     setProgress(newProgress);
     localStorage.setItem("weeklyProgress", JSON.stringify(newProgress));
-    sendEmail()
   };
   useEffect(() => {
     // confetti 인스턴스 생성
@@ -663,7 +662,7 @@ export default function StudyDashboard() {
     console.log("imageA : " + imageA)
     reader.onloadend = () => {
       setImageBase642(reader.result);
-      updateTaskImageA(reader.result, index, imageA, file);
+      // updateTaskImageA(reader.result, index, imageA, file);
       console.log("Base64 Data:", reader.result);
     };
     
@@ -696,7 +695,7 @@ export default function StudyDashboard() {
 
         const currentWeek = getWeekNumber(now);
 
-        const lastWeek = 12;
+        const lastWeek = parseInt(localStorage.getItem("lastUpdatedWeek"), 10) || 0;
 
         if (currentWeek !== lastWeek) {
                   // 새 주차가 시작되었으므로 초기화
