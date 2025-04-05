@@ -31,7 +31,7 @@ import AdFitBanner from "@/component/ui/KakoAdfit.tsx"
 const truncateText = (text , maxLength = 8) => {
   return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
 };
-const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AIzaSyBnCx7atE0xGWcSNtV6ILLxymYWAs45vgU");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const convertImageToBase64 = async (file) => {
@@ -743,7 +743,8 @@ export default function StudyDashboard() {
           const updatedProgress = userData.weeklyProgress.map((task, index) => {
             return {
                 ...task,
-                minutes : 0
+                minutes : 0,
+                todayTasks : [""]
             }
                     
           });
